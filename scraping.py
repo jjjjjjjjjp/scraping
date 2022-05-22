@@ -2,6 +2,7 @@
 from pickle import FALSE, TRUE
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.select import Select
 from time import sleep
 import re
 import csv
@@ -34,6 +35,9 @@ driver.find_element_by_xpath("//input[@id='check_grade_1']").click()
 driver.find_element_by_xpath("//input[@id='check_grade_2']").click()
 # G3
 driver.find_element_by_xpath("//input[@id='check_grade_3']").click()
+#表示件数 = 100
+Select(driver.find_element_by_id("db_search_detail_form").find_element_by_name("list")).select_by_value("20")
+
 # 検索ボタンクリック
 try:
     driver.find_element_by_css_selector("input[value='検索']").click()
@@ -65,9 +69,10 @@ for i in range(1,len(trs)):
 
 for url in urls:
     csv_data = []
-    print(url)
     driver.get(url)
     racename = driver.find_element_by_class_name('racedata.fc').find_element_by_tag_name('h1')
+    racedetail = driver.find_element_by_xpath("//*[@id='main']/div/div/div/diary_snap/div/div/dl/dd/p/diary_snap_cut/span")
+    print("racedetail = ", racedetail.text)
     # dfs = pd.read_html(url)
     result_table = driver.find_element_by_class_name("race_table_01.nk_tb_common")
     trs = result_table.find_elements(By.TAG_NAME, "tr")
@@ -83,7 +88,6 @@ for url in urls:
         # print("tr data = ", tr_data)
         if len(tr_data) != 0:
             csv_data.append(tr_data)
-    print(csv_data)
     df = pd.DataFrame(csv_data)
     # print("dataframe = " ,df)
-    df.to_csv('test_' + racename.text + ".csv",header=False, index=False, encoding='shift-jis')
+    df.to_csv('./csv/test_' + racename.text + ".csv",header=False, index=False, encoding='shift-jis')

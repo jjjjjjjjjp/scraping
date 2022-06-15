@@ -89,5 +89,6 @@ for url in urls:
         if len(tr_data) != 0:
             csv_data.append(tr_data)
     df = pd.DataFrame(csv_data)
+    df = df.drop(df.columns[[9, 15, 16, 17]], axis=1)
     # print("dataframe = " ,df)
-    df.to_csv('./csv/test_' + racename.text + ".csv",header=False, index=False, encoding='shift-jis')
+    df.to_csv('./csv/test_' + racename.text + ".csv",header=False, index=False)

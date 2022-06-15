@@ -90,5 +90,5 @@ for url in urls:
             csv_data.append(tr_data)
     df = pd.DataFrame(csv_data)
     df = df.drop(df.columns[[9, 15, 16, 17]], axis=1)
-    # print("dataframe = " ,df)
+    # print("dataframe = " ,df)aaa
     df.to_csv('./csv/test_' + racename.text + ".csv",header=False, index=False)

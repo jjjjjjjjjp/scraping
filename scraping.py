@@ -113,41 +113,6 @@ for url in urls:
     raceid = url.split(r'/')[-2]
     print('raceid =', raceid)    
 
-    # レース情報（２）取得
-    # フォーマット = 2022年6月5日 3回東京2日目 3歳以上オープン  (国際)(指)(定量)
-    # racedetail_2 = driver.find_element(By.XPATH, '//*[@id="main"]/div/div/div/diary_snap/div/div/p').text.split()
-    # date_buf = re.split('[年月日]', racedetail_2[0])
-    # race_year = date_buf[0].zfill(2)
-    # race_month = date_buf[1].zfill(2)
-    # race_date = date_buf[2].zfill(2)
-    # race_cource_id = "00"
-    # race_cource_name = ""
-    # for cource_name in COURCE_ID.keys():
-    #     if cource_name in racedetail_2[1]:
-    #         race_cource_id = COURCE_ID[cource_name]
-    #         race_cource_name = cource_name
-    
-    # raceid = race_year + race_cource_id + race_month + race_date  + race_no
-
-    # print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    # print(racename)
-    # print("raceID = ", raceid)
-    # print(race_year, "年")
-    # print(race_month, "月")
-    # print(race_date, "日")
-    # print(race_cource_name)
-    # print(race_no, "レース")
-    # print(field)
-    # print(rl_round,"周り")
-    # print(dist, "m")
-    # print("天候：", weather)
-    # print("馬場：", g_state)
-    # print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-
-    # print("racedetail = ", racedetail)
-    # dfs = pd.read_html(url)
-    # race_year
-
     result_table = driver.find_element(By.XPATH, '//*[@id="contents_liquid"]/table')
     trs = result_table.find_elements(By.TAG_NAME, "tr")
     # 馬ID保存用リスト

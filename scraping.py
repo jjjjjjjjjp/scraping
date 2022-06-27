@@ -1,3 +1,4 @@
+from logging import exception
 from telnetlib import EC
 from pickle import FALSE, TRUE
 from selenium import webdriver
@@ -26,7 +27,7 @@ RACE_COURCE = {
 }
 
 def main_func():
-        
+
     # ドライバーの設定
     driver = webdriver.Chrome('chromedriver')
 
@@ -94,6 +95,8 @@ def main_func():
                     search_flag = FALSE
                     break
 
+    os.makedirs(os.path.dirname(__file__)+'/csv', exist_ok=True)
+
     for url in urls:
         # レース情報格納用のdict
         racedetail_dict = {
@@ -105,7 +108,7 @@ def main_func():
             'weather': '-', # 天候
             'ground': '-', #芝ダート
             'g_state': '-', #馬場
-            'round': '-' # 左右回り
+            'around': '-' # 左右回り
             }
         raceid = url.rsplit('/',2)[1]
         print('raceid = ' ,raceid)
@@ -136,9 +139,9 @@ def main_func():
             racedetail_dict['ground'] = 'ダート'
         # 回り向き情報登録
         if '右' in racedetail_list[0]:
-            racedetail_dict['round'] = '右'
+            racedetail_dict['around'] = '右'
         elif '左' in racedetail_list[0]:
-            racedetail_dict['round'] = '左'
+            racedetail_dict['around'] = '左'
         # 距離登録
         racedetail_dict['dist'] = re.sub(r'\D', '', re.findall(r'\d.*m', racedetail)[0])
         # 天候登録
@@ -152,6 +155,7 @@ def main_func():
         result_table = driver.find_element(By.XPATH, '//*[@id="contents_liquid"]/table')
         trs = result_table.find_elements(By.TAG_NAME, "tr")
         # 行ごとに操作
+        hource_ids =[]
         for tr in trs:
             tr_data = []
             ths = tr.find_elements(By.TAG_NAME, "th")
@@ -162,17 +166,46 @@ def main_func():
             tds = tr.find_elements(By.TAG_NAME, "td")
             for td in tds:
                 tr_data.append(td.text)
+                # 馬のid取得
+                try:
+                    if bool(re.search('umalink', td.find_element(By.TAG_NAME, "a").get_attribute('id'))):
+                        hource_id = td.find_element(By.TAG_NAME, "a").get_attribute('href').split(r'/')[-2]
+                        hource_ids.append(hource_id)
+                except:
+                    None
             # print("tr data = ", tr_data)
             if len(tr_data) != 0:
                 csv_data.append(tr_data)
-        df = pd.DataFrame(csv_data)
+        df = pd.DataFrame(csv_data[1:], columns=csv_data[0])
         # print("dataframe = " ,df)
-        df.to_csv('./csv/' + racename + ".csv",header=False, index=False)
+        droplist=['ﾀｲﾑ指数', '調教ﾀｲﾑ', '厩舎ｺﾒﾝﾄ','備考']
+        for dropcol in droplist:
+            try:
+                df = df.drop(df.filter(like = dropcol, axis=1), axis=1)
+            except:
+                None
+        
+    for key in racedetail_dict.keys():
+        racedetail_dict[key] = racedetail_dict[key].strip()
+
+        df['raceName'] = racename
+        df['raceID'] = raceid
+        df['cource'] = racedetail_dict['cource']
+        df['distance'] = racedetail_dict['dist']
+        df['around'] = racedetail_dict['around']
+        df['groungState'] = racedetail_dict['g_state']
+        df['weather'] = racedetail_dict['weather']
+        df['houceID'] = hource_ids
+        df['sex'] = df['性齢'].str[0]
+        df['age'] = df['性齢'].str[1]
+        df = df.drop('性齢', axis=1)
+        df.to_csv('./csv/' + racename + ".csv", index=False)
 
     driver.close()
 
 if __name__ == "__main__": 
     try:
         main_func() 
-    except:
-        subprocess.run("ps aux | grep chromedriver | grep -v grep | awk '{ print "kill -9", $2 }' | sh")
+    except exception as e:
+        print(e)
+        # subprocess.run('ps aux | grep chromedriver | grep -v grep | awk "{ print "kill -9", $2 }"" | sh')

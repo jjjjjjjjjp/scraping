@@ -2,6 +2,7 @@ from logging import exception
 from telnetlib import EC
 from pickle import FALSE, TRUE
 from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support.select import Select
@@ -29,7 +30,7 @@ RACE_COURCE = {
 def main_func():
 
     # ドライバーの設定
-    driver = webdriver.Chrome('chromedriver')
+    driver = webdriver.Chrome(ChromeDriverManager().install())
 
     # netkeiba.comのレース詳細検索に移動
     driver.get('https://db.netkeiba.com/?pid=race_search_detail')
@@ -65,6 +66,7 @@ def main_func():
     try:
         # wait.until(EC.presence_of_element_located(By.XPATH, '//*[@id="db_search_detail_form"]/form/div/input[1]' ))
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        forserch_elem = driver.find_element(By.XPATH, '//*[@id="db_search_detail_form"]/form/div/input[1]')
         forserch_elem.click()
         # driver.find_element_by_css_selector("input[value='検索']").click()
     except Exception:
@@ -111,8 +113,6 @@ def main_func():
             'around': '-' # 左右回り
             }
         raceid = url.rsplit('/',2)[1]
-        print('raceid = ' ,raceid)
-        print('raceid[4:6] = ', raceid[4:6])
         racedetail_dict['cource'] = RACE_COURCE[raceid[4:6]]
         csv_data = []
         driver.get(url)
@@ -123,7 +123,6 @@ def main_func():
         # （例）2022年6月5日 3回東京2日目 3歳以上オープン  (国際)(指)(定量)
         racedate = driver.find_element(By.XPATH, '//*[@id="main"]/div/div/div/diary_snap/div/div/p').text
         racedate = re.findall(r'\d+', racedate)[:3]
-        print('racedate = ', racedate)
         racedetail_dict['year'] = racedate[0]
         racedetail_dict['month'] = racedate[1]
         racedetail_dict['date'] = racedate[2]
@@ -148,8 +147,6 @@ def main_func():
         racedetail_dict['weather'] = racedetail_list[1].split(':')[1]
         # 馬場状態登録
         racedetail_dict['g_state'] = racedetail_list[2].split(':')[1]
-
-        print('racedetail_dict = \n', racedetail_dict)
 
         # レース結果テーブル取得
         result_table = driver.find_element(By.XPATH, '//*[@id="contents_liquid"]/table')
@@ -185,8 +182,8 @@ def main_func():
             except:
                 None
         
-    for key in racedetail_dict.keys():
-        racedetail_dict[key] = racedetail_dict[key].strip()
+        for key in racedetail_dict.keys():
+            racedetail_dict[key] = racedetail_dict[key].strip()
 
         df['raceName'] = racename
         df['raceID'] = raceid
@@ -199,6 +196,8 @@ def main_func():
         df['sex'] = df['性齢'].str[0]
         df['age'] = df['性齢'].str[1]
         df = df.drop('性齢', axis=1)
+        print(df['馬体重'].str.extract("(?<=\().+?(?=\))"))
+        # df['馬体重'] = df['馬体重'].str.extract("(?<=\().+?(?=\))")
         df.to_csv('./csv/' + racename + ".csv", index=False)
 
     driver.close()

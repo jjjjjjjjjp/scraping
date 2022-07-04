@@ -14,6 +14,15 @@ import pandas as pd
 import os
 import subprocess
 
+class Browser:
+    def scrollByElemAndOffset(self, element, offset = 0):
+
+        self.driver.execute_script("arguments[0].scrollIntoView();", element)
+
+        if (offset != 0):
+            script = "window.scrollTo(0, window.pageYOffset + " + str(offset) + ");"
+            self.driver.execute_script(script)
+
 RACE_COURCE = { 
     '01':'札幌',
     '02':'函館',
@@ -65,11 +74,14 @@ def main_func():
     # 検索ボタンクリック
     try:
         # wait.until(EC.presence_of_element_located(By.XPATH, '//*[@id="db_search_detail_form"]/form/div/input[1]' ))
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         forserch_elem = driver.find_element(By.XPATH, '//*[@id="db_search_detail_form"]/form/div/input[1]')
+        # driver.execute_script("arguments[0].scrollIntoView();", forserch_elem)
+        # driver.execute_script("window.scrollTo(0, window.pageYOffset + " + str(-10) + ");")
+        # driver.execute_script('arguments[0].click();', forserch_elem)
         forserch_elem.click()
         # driver.find_element_by_css_selector("input[value='検索']").click()
-    except Exception:
+    except exception as e:
+        print(e)
         print('「検索」ボタンが押せませんでした')
         driver.close()
         os.abort()
@@ -196,7 +208,10 @@ def main_func():
         df['sex'] = df['性齢'].str[0]
         df['age'] = df['性齢'].str[1]
         df = df.drop('性齢', axis=1)
-        print(df['馬体重'].str.extract("(?<=\().+?(?=\))"))
+        s_org = df['馬体重'].str.extract('(.*)\((.*)\)', expand = True)
+        df['weight'] = s_org[0]
+        df['weight_diff'] = s_org[1]
+        df = df.drop('馬体重', axis=1)
         # df['馬体重'] = df['馬体重'].str.extract("(?<=\().+?(?=\))")
         df.to_csv('./csv/' + racename + ".csv", index=False)
 

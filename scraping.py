@@ -73,11 +73,10 @@ def main_func():
 
     # 検索ボタンクリック
     try:
-        # wait.until(EC.presence_of_element_located(By.XPATH, '//*[@id="db_search_detail_form"]/form/div/input[1]' ))
         forserch_elem = driver.find_element(By.XPATH, '//*[@id="db_search_detail_form"]/form/div/input[1]')
-        # driver.execute_script("arguments[0].scrollIntoView();", forserch_elem)
-        # driver.execute_script("window.scrollTo(0, window.pageYOffset + " + str(-10) + ");")
-        # driver.execute_script('arguments[0].click();', forserch_elem)
+
+        driver.execute_script("window.scrollTo(0, window.pageYOffset + " + str(-10) + ");")
+        sleep(1)
         forserch_elem.click()
         # driver.find_element_by_css_selector("input[value='検索']").click()
     except exception as e:
@@ -85,8 +84,6 @@ def main_func():
         print('「検索」ボタンが押せませんでした')
         driver.close()
         os.abort()
-
-    sleep(1)
 
     tableElem = driver.find_element(By.XPATH, '//*[@id="contents_liquid"]/table')
     trs = tableElem.find_elements(By.TAG_NAME, "tr")
@@ -197,19 +194,19 @@ def main_func():
         for key in racedetail_dict.keys():
             racedetail_dict[key] = racedetail_dict[key].strip()
 
-        df['raceName'] = racename
+        df['race_name'] = racename
         df['raceID'] = raceid
         df['cource'] = racedetail_dict['cource']
         df['distance'] = racedetail_dict['dist']
         df['around'] = racedetail_dict['around']
-        df['groungState'] = racedetail_dict['g_state']
-        df['weather'] = racedetail_dict['weather']
+        df['groung_state'] = racedetail_dict['g_state'].replace(' ', '')
+        df['weather'] = racedetail_dict['weather'].replace(' ', '')
         df['houceID'] = hource_ids
         df['sex'] = df['性齢'].str[0]
         df['age'] = df['性齢'].str[1]
         df = df.drop('性齢', axis=1)
         s_org = df['馬体重'].str.extract('(.*)\((.*)\)', expand = True)
-        df['weight'] = s_org[0]
+        df['hource_weight'] = s_org[0]
         df['weight_diff'] = s_org[1]
         df = df.drop('馬体重', axis=1)
         # df['馬体重'] = df['馬体重'].str.extract("(?<=\().+?(?=\))")

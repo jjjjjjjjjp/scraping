@@ -5,20 +5,16 @@ import csv
 import pandas as pd
 import os
 import glob
+import numpy as np
 
 from pathlib import Path
+
+from pymysql import NULL
 
 def make_query():
     query = ''
 
 cnx = None
-
-
-# cnx = mysql.connector.connect(
-#     user='root',  # ユーザー名
-#     password='hmjn9577JunJun91',  # パスワード
-#     host='localhost'  # ホスト名(IPアドレス）
-# )
 
 cnx = MySQLdb.connect(
 db = "test",
@@ -55,6 +51,13 @@ df = df.rename(columns={
     '馬体重':'hource_weight'
     })
 
+try:
+    df = df.rename(columns={'houceID':'hourceID'})
+except:
+    None
+
+df = df.replace({np.nan: None})
+
 # print(df.columns.to_list())
 
 # for val in df.values:
@@ -63,14 +66,16 @@ df = df.rename(columns={
 
 cursor = cnx.cursor()
 
+# テーブル削除
+# query = 'DROP TABLE IF EXISTS race_result'
+# cursor.execute(query)
+
 # テーブルの作成
 query = 'CREATE TABLE IF NOT EXISTS race_result ('
 for i, col in enumerate(df.columns.to_list()):
-    if i == 0:
-        query = query + col + ' VARCHAR(50) NULL'
-    else:
-        query =  query + ',\n' + col + ' VARCHAR(50) NULL'
-query = query + ')'
+    query += col + ' VARCHAR(50) NULL ,' 
+
+query = query + ' unique hource_race_ID (hourceID, raceID) )'
 
 # print(query)
 
@@ -78,14 +83,19 @@ cursor.execute(query)
 
 # レース結果のINSERT
 for val in df.values:
-    query = "INSERT INTO 'race_result' VALUES ("
+    query = "INSERT IGNORE INTO race_result ("
+    for i, col in enumerate(df.columns.to_list()):
+        query += col +','
+    query = query[:-1] + ' ) VALUES ( '
     for i, cell in enumerate(val):
         query += "%s,"
-        print(i)
     query = query[:-1] + ")"
-    print( tuple(map(str, val.tolist())))
 
-    cursor.executemany(query, tuple(map(str, val.tolist())))
+print(query)
+
+
+cursor.executemany(query, df.values.tolist())
+cnx.commit()
 
 # テーブルの作成
 # cursor.execute("""CREATE TABLE race_result(

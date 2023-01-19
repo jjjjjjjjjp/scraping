@@ -38,6 +38,8 @@ RACE_COURCE = {
 
 def main_func():
 
+    SAVE_DIR = './csv/'
+
     # ドライバーの設定
     driver = webdriver.Chrome(ChromeDriverManager().install())
 
@@ -60,14 +62,14 @@ def main_func():
     driver.find_element(By.XPATH,"//input[@id='check_Jyo_09']").click()
     # 阪神
     driver.find_element(By.XPATH,"//input[@id='check_Jyo_10']").click()
-    # G1
-    driver.find_element(By.XPATH,"//input[@id='check_grade_1']").click()
-    # G2
-    driver.find_element(By.XPATH,"//input[@id='check_grade_2']").click()
-    # G3
-    driver.find_element(By.XPATH,"//input[@id='check_grade_3']").click()
+    # # G1
+    # driver.find_element(By.XPATH,"//input[@id='check_grade_1']").click()
+    # # G2
+    # driver.find_element(By.XPATH,"//input[@id='check_grade_2']").click()
+    # # G3
+    # driver.find_element(By.XPATH,"//input[@id='check_grade_3']").click()
     #表示件数 = 20
-    Select(driver.find_element(By.XPATH, '//*[@id="db_search_detail_form"]/form/table/tbody/tr[11]/td/select')).select_by_value("20")
+    Select(driver.find_element(By.XPATH, '//*[@id="db_search_detail_form"]/form/table/tbody/tr[11]/td/select')).select_by_value("100")
 
     forserch_elem = driver.find_element(By.XPATH, '//*[@id="db_search_detail_form"]/form/div/input[1]')
 
@@ -94,19 +96,24 @@ def main_func():
     search_flag = FALSE
 
     for i in range(1,len(trs)):
-            tds = trs[i].find_elements(By.TAG_NAME, "td")
-            for td in tds:
-                atags = td.find_elements(By.TAG_NAME, "a")
-                for atag in atags:
-                    if  bool(search_lm.search(atag.get_attribute("title"))):
-                        urls.append(atag.get_attribute("href"))
-                        search_flag = TRUE
-                        break
-                if search_flag == TRUE:
-                    search_flag = FALSE
-                    break
+        # 検索結果表の各行5列目(レース名)のURLを取得
+        tds = trs[i].find_elements(By.TAG_NAME, "td")
+        atag = tds[4].find_element(By.TAG_NAME, "a")
+        urls.append(atag.get_attribute("href"))
+            # for td in tds:
+            #     atags = td.find_elements(By.TAG_NAME, "a")
+            #     for atag in atags:
+            #         if  bool(search_lm.search(atag.get_attribute("title"))):
+            #             urls.append(atag.get_attribute("href"))
+            #             search_flag = TRUE
+            #             break
+            #     if search_flag == TRUE:
+            #         search_flag = FALSE
+            #         break
 
     os.makedirs(os.path.dirname(__file__)+'/csv', exist_ok=True)
+
+    print(urls)
 
     for url in urls:
         # レース情報格納用のdict
@@ -199,7 +206,9 @@ def main_func():
         df['cource'] = racedetail_dict['cource']
         df['distance'] = racedetail_dict['dist']
         df['around'] = racedetail_dict['around']
+        df['groung'] = racedetail_dict['ground']
         df['groung_state'] = racedetail_dict['g_state'].replace(' ', '')
+        
         df['weather'] = racedetail_dict['weather'].replace(' ', '')
         df['houceID'] = hource_ids
         df['sex'] = df['性齢'].str[0]
@@ -210,13 +219,10 @@ def main_func():
         df['weight_diff'] = s_org[1]
         df = df.drop('馬体重', axis=1)
         # df['馬体重'] = df['馬体重'].str.extract("(?<=\().+?(?=\))")
-        df.to_csv('./csv/' + racename + ".csv", index=False)
+        df.to_csv(SAVE_DIR + raceid + ".csv", index=False)
 
     driver.close()
 
 if __name__ == "__main__": 
-    try:
-        main_func() 
-    except exception as e:
-        print(e)
-        # subprocess.run('ps aux | grep chromedriver | grep -v grep | awk "{ print "kill -9", $2 }"" | sh')
+
+    main_func() 

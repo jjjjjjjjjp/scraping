@@ -92,7 +92,7 @@ def main_func():
     # # G3
     # driver.find_element(By.XPATH,"//input[@id='check_grade_3']").click()
     #表示件数 = 20
-    Select(driver.find_element(By.XPATH, '//*[@id="db_search_detail_form"]/form/table/tbody/tr[11]/td/select')).select_by_value("100")
+    Select(driver.find_element(By.XPATH, '//*[@id="db_search_detail_form"]/form/table/tbody/tr[11]/td/select')).select_by_value("20")
 
     forserch_elem = driver.find_element(By.XPATH, '//*[@id="db_search_detail_form"]/form/div/input[1]')
 
@@ -110,19 +110,18 @@ def main_func():
         driver.close()
         os.abort()
 
-    tableElem = driver.find_element(By.XPATH, '//*[@id="contents_liquid"]/table')
-    trs = tableElem.find_elements(By.TAG_NAME, "tr")
 
     search_lm = re.compile(r'(G1)|(G2)|(G3)')
 
-    urls = []
-    search_flag = FALSE
-
     # スクレイピング終了フラグの設定
-    fin_flag = FALSE
+    fin_flag = False
 
     while True:
+        # 表の情報取得
+        tableElem = driver.find_element(By.XPATH, '//*[@id="contents_liquid"]/table')
+        trs = tableElem.find_elements(By.TAG_NAME, "tr")
         # URL取得
+        urls = []
         for i in range(1,len(trs)):
             # 検索結果表の各行5列目(レース名)のURLを取得
             tds = trs[i].find_elements(By.TAG_NAME, "td")
@@ -142,8 +141,10 @@ def main_func():
         # 検索結果の次のページを表示
         try:
             nextpage = driver.find_element(By.XPATH, '//html/body/div[1]/div[2]/div[2]/ul[1]/li[14]/a').get_attribute("href")
+            print('nextpage exested')
         except:
             # 次のページが取得できない=検索結果最後のページ
+            print('last page')
             fin_flag = TRUE
 
         # 各レース先にアクセス
@@ -269,6 +270,7 @@ def main_func():
         driver.get(nextpage)
 
         # 終了フラグ確認
+        print('fin flag = ', fin_flag)
         if fin_flag:
             break
     # 終了

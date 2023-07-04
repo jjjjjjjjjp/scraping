@@ -19,7 +19,7 @@ cnx = None
 cnx = MySQLdb.connect(
 db = "test",
 user = "root",
-passwd = 'hmjn9577JunJun91',
+passwd = '',
 host='localhost',
 )
 
@@ -33,7 +33,7 @@ for i in csv_files:
     df = pd.concat([df, tmp])
 
 df = df.rename(columns={
-    '着順':'final_posision',
+    '着順':'posision',
     '枠番': 'bracket',
     '馬番':'number', 
     '馬名':'hource_name',

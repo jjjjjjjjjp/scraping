@@ -1,15 +1,23 @@
 # 生データの整形やDB
 import os
-import sys
 import sqlite3
 import csv
+
+def check_existing_data(conn, race_id, horse_num):
+    """
+    データベース内に指定されたレースIDと馬番が既に存在するかをチェックする関数。
+    """
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM race_results WHERE RaceID = ? AND Horse_num = ?", (race_id, horse_num))
+    count = cursor.fetchone()[0]
+    return count > 0
 
 def csv_to_sqlite(csv_file, db_file, table_name):
     # SQLiteデータベースに接続
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
 
-    # テーブルを作成するSQL文を定義（例：カラム名は適宜変更してください）
+    # テーブルを作成するSQL文を定義
     create_table_sql = f'''
         CREATE TABLE IF NOT EXISTS {table_name} (
         id INTEGER PRIMARY KEY AUTOINCREMENT, -- レコードを一意に識別するためのID、自動インクリメント
@@ -18,8 +26,8 @@ def csv_to_sqlite(csv_file, db_file, table_name):
         Course TEXT NOT NULL, -- レース会場、NULLを許容しない
         Distance INTEGER NOT NULL, -- レースの距離、NULLを許容しない
         Direction TEXT NOT NULL, -- レースの方向、NULLを許容しない
-        Surface TEXT NOT NULL, -- レースの路面状況、NULLを許容しない
-        Track_condition TEXT NOT NULL, -- レースのトラック状況、NULLを許容しない
+        Surface TEXT NOT NULL, -- 芝 or ダート、NULLを許容しない
+        Track_condition TEXT NOT NULL, -- 馬場、NULLを許容しない
         Weather TEXT, -- レース当日の天候、NULLを許容する
         Gate_num INTEGER, -- 馬の枠番号
         Horse_num INTEGER, -- 馬の馬番号
@@ -30,8 +38,8 @@ def csv_to_sqlite(csv_file, db_file, table_name):
         Horse_weight INTEGER, -- 馬の体重
         Weight_change INTEGER, -- 馬の体重変化
         Assigned_weight INTEGER, -- 斤量
-        Jockey TEXT NOT NULL, -- 騎手の名前、NULLを許容しない
         Finish_position INTEGER, -- 着順
+        Jockey TEXT NOT NULL, -- 騎手の名前、NULLを許容しない
         Time TEXT, -- レースのタイム
         Margin TEXT, -- 1着との差距離
         Passing_positions TEXT, -- 通過順位
@@ -48,10 +56,18 @@ def csv_to_sqlite(csv_file, db_file, table_name):
 
     # CSVファイルを開いてデータを読み込み、SQLiteに挿入する
     with open(csv_file, 'r', newline='', encoding='utf-8') as f:
+        print("Reading...", csv_file)
         csv_reader = csv.DictReader(f)
         for row in csv_reader:
-            insert_sql = """
-            INSERT INTO race_results (
+            race_id = row['raceID']
+            horse_num = row['馬番']
+
+            # 既存のデータがあるかどうかをチェック
+            if check_existing_data(conn, race_id, horse_num):
+                print(f"RaceID: {race_id}, Horse_num: {horse_num} は既に存在するためスキップします。")
+                continue
+            insert_sql = f"""
+            INSERT INTO {table_name} (
                 RaceID, 
                 Race_name, 
                 Course, 
@@ -80,7 +96,7 @@ def csv_to_sqlite(csv_file, db_file, table_name):
                 Trainer,
                 Owner,
                 Prize_money
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
             # CSVから取得したデータをタプルに変換して挿入
             values = (
@@ -99,7 +115,7 @@ def csv_to_sqlite(csv_file, db_file, table_name):
                 row['sex'],
                 row['age'], 
                 row['hource_weight'], 
-                row['weight_change'],
+                row['weight_diff'],  
                 row['斤量'],
                 row['着順'],
                 row['騎手'],
@@ -113,18 +129,37 @@ def csv_to_sqlite(csv_file, db_file, table_name):
                 row['馬主'], 
                 row['賞金(万円)']
             )
-            cursor.execute(insert_sql, values)
+            try:
+                cursor.execute(insert_sql, values)
+            except sqlite3.Error as e:
+                print(f"SQLite error occurred: {e}")
+                #トランザクションをロールバックする
+                conn.rollback()
+            except Exception as e:
+                print(f"An error occurred: {e}")
 
     # 変更をコミットしてデータベースを保存し、接続を閉じる
     conn.commit()
     conn.close()
+    print("DBinput Conpleted", csv_file)
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    csv_folder = os.path.join(script_dir, 'data')
+    csv_folder = os.path.join(script_dir, 'csv')
     db_file = 'race_results.db'
     table_name = 'race_results'
     for csv_file in os.listdir(csv_folder):
         if csv_file.endswith('.csv'):
             csv_path = os.path.join(csv_folder, csv_file)
-        csv_to_sqlite(csv_file, db_file, table_name)
+                        # ファイルごとに処理をスキップするかどうかを判定
+            with sqlite3.connect(db_file) as conn:
+                csv_reader = csv.DictReader(open(csv_path, 'r', newline='', encoding='utf-8'))
+                for row in csv_reader:
+                    race_id = row['raceID']
+                    horse_num = row['馬番']
+                    if check_existing_data(conn, race_id, horse_num):
+                        print(f"RaceID: {race_id}, Horse_num: {horse_num} は既に存在するため、ファイルの処理をスキップします。")
+                        break  # ファイル全体の処理をスキップする場合は break を使用します
+                    else:
+                        csv_to_sqlite(csv_path, db_file, table_name)
+

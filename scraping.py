@@ -8,7 +8,6 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import TimeoutException, WebDriverException, NoSuchElementException
-from selenium.common.exceptions import ElementClickInterceptedException, ElementNotInteractableException
 from time import sleep
 import re
 import csv
@@ -211,24 +210,20 @@ def All_cource_scraping():
     #表示件数 = 20
     Select(driver.find_element(By.XPATH, '//*[@id="db_search_detail_form"]/form/table/tbody/tr[11]/td/select')).select_by_value("20")
     #検索ボタンを探す
-   
+    forserch_elem = driver.find_element(By.XPATH, '//*[@id="db_search_detail_form"]/form/div/input[1]')
 
     # 検索ボタンクリック
     try:
-        forserch_elem = driver.find_element(By.XPATH, '//*[@id="db_search_detail_form"]/form/div/input[1]')
         driver.execute_script("arguments[0].scrollIntoView();", forserch_elem)
         sleep(1)
         forserch_elem.click()
         # driver.find_element_by_css_selector("input[value='検索']").click()
-    except ElementClickInterceptedException as e:
-        print(f"要素がクリックできませんでした: {e}")
-    except ElementNotInteractableException as e:
-        print(f"要素がインタラクティブでないためクリックできませんでした: {e}")
-    except Exception as e:
-        print(f"予期しないエラーが発生しました: {e}")
-    finally:
-        # ブラウザを閉じる
-        driver.quit()
+    except exception as e:
+        print(e)
+        print('「検索」ボタンが押せませんでした')
+        driver.close()
+        os.abort()
+
 
     search_lm = re.compile(r'(G1)|(G2)|(G3)')
 

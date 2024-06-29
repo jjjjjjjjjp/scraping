@@ -48,6 +48,3 @@ def check_existing_data(conn, race_id, horse_num):
 if __name__ == "__main__": 
     Print_filepath()
     input_string = "446(-2)"
-
-    result = split_string(input_string)
-    print(result)

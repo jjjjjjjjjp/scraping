@@ -1,13 +1,9 @@
-# 生データの整形やDBの作成を行う
+# 生データの整形やDB
 
 import csv
 import sqlite3
 
 def csv_to_sqlite(csv_file, db_file, table_name):
-# csv_file # 変換したいCSVファイルのパス
-# db_file # 保存先のSQLiteデータベースファイル名
-# table_name　# 作成するテーブル名
-    
     # SQLiteデータベースに接続
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
@@ -19,6 +15,7 @@ def csv_to_sqlite(csv_file, db_file, table_name):
         column1 TEXT,
         column2 TEXT,
         column3 INTEGER
+        -- ここにカラムの定義を追加
     );
     '''
     cursor.execute(create_table_sql)

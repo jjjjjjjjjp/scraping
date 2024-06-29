@@ -154,12 +154,11 @@ def Url_scraping(url, driver):
     # df['馬体重'] = df['馬体重'].str.extract("(?<=\().+?(?=\))")
     return df
 
-def All_scraping(): # netkeiba.comで検索できるすべてのレースの情報を取得する
+def All_cource_scraping():
 
     # 保存用フォルダ作成
-    os.makedirs(os.path.dirname(__file__)+'/export', exist_ok=True)
-    os.makedirs(os.path.dirname(__file__)+'/export/csv_raw', exist_ok=True)
-    SAVE_DIR = './export/csv_raw'
+    os.makedirs(os.path.dirname(__file__)+'/csv', exist_ok=True)
+    SAVE_DIR = './csv/'
 
     # 保存済みのレースidリスト取得(重複取得の回避)
     csvs_path = glob.glob(os.path.join(SAVE_DIR,'*.csv'))
@@ -171,7 +170,7 @@ def All_scraping(): # netkeiba.comで検索できるすべてのレースの情�
     # ドライバーの設定
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
-    # netkeiba.comのレース詳細検索に移動　
+    # netkeiba.comのレース詳細検索に移動
     driver.get('https://db.netkeiba.com/?pid=race_search_detail')
     # find_element(by=By.XPATH, value=xpath)
 
@@ -216,24 +215,23 @@ def All_scraping(): # netkeiba.comで検索できるすべてのレースの情�
 
     # 検索ボタンクリック
     try:
-        driver.switch_to.frame("iframeResult")
-
         forserch_elem = driver.find_element(By.XPATH, '//*[@id="db_search_detail_form"]/form/div/input[1]')
         driver.execute_script("arguments[0].scrollIntoView();", forserch_elem)
         sleep(1)
         forserch_elem.click()
         # driver.find_element_by_css_selector("input[value='検索']").click()
     except ElementClickInterceptedException as e:
-        print(f"検索ボタンがクリックできませんでした: {e}")
+        print(f"要素がクリックできませんでした: {e}")
     except ElementNotInteractableException as e:
-        print(f"検索ボタンがインタラクティブでないためクリックできませんでした: {e}")
+        print(f"要素がインタラクティブでないためクリックできませんでした: {e}")
     except Exception as e:
-        print(f"検索ボタンの押下時に予期しないエラーが発生しました: {e}")
+        print(f"予期しないエラーが発生しました: {e}")
     finally:
         # ブラウザを閉じる
-        driver.quit()    
+        driver.quit()
 
     search_lm = re.compile(r'(G1)|(G2)|(G3)')
+
 
     while True:
         # 表の情報取得
@@ -280,6 +278,8 @@ def All_scraping(): # netkeiba.comで検索できるすべてのレースの情�
 
     # 終了
     driver.close()
+
+
 
 if __name__ == "__main__": 
 

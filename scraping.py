@@ -205,14 +205,14 @@ def All_cource_scraping():
     driver.find_element(By.XPATH,"//input[@id='check_Jyo_09']").click()
     # 阪神
     driver.find_element(By.XPATH,"//input[@id='check_Jyo_10']").click()
-    # # G1
-    # driver.find_element(By.XPATH,"//input[@id='check_grade_1']").click()
-    # # G2
-    # driver.find_element(By.XPATH,"//input[@id='check_grade_2']").click()
-    # # G3
-    # driver.find_element(By.XPATH,"//input[@id='check_grade_3']").click()
-    #表示件数 = 20
-    Select(driver.find_element(By.XPATH, '//*[@id="db_search_detail_form"]/form/table/tbody/tr[11]/td/select')).select_by_value("20")
+    # G1
+    driver.find_element(By.XPATH,"//input[@id='check_grade_1']").click()
+    # G2
+    driver.find_element(By.XPATH,"//input[@id='check_grade_2']").click()
+    # G3
+    driver.find_element(By.XPATH,"//input[@id='check_grade_3']").click()
+    #表示件数 20/50/100
+    Select(driver.find_element(By.XPATH, '//*[@id="db_search_detail_form"]/form/table/tbody/tr[11]/td/select')).select_by_value("100")
     #検索ボタンを探す
     forserch_elem = driver.find_element(By.XPATH, '//*[@id="db_search_detail_form"]/form/div/input[1]')
 

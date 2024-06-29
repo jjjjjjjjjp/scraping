@@ -16,6 +16,7 @@ import os
 import glob
 import subprocess
 import Selfmade_functions as Smf
+import sqlite3
 
 class Browser:
     def scrollByElemAndOffset(self, element, offset = 0):
@@ -155,6 +156,9 @@ def Url_scraping(url, driver):
 
 def All_cource_scraping():
 
+    #dbファイル(あれば)
+    db_file = 'race_results.db'
+
     # 保存用フォルダ作成
     os.makedirs(os.path.dirname(__file__)+'/csv', exist_ok=True)
     SAVE_DIR = './csv/'
@@ -224,9 +228,7 @@ def All_cource_scraping():
         driver.close()
         os.abort()
 
-
     search_lm = re.compile(r'(G1)|(G2)|(G3)')
-
 
     while True:
         # 表の情報取得
@@ -249,17 +251,17 @@ def All_cource_scraping():
             nextpage = None
             print('last page')
 
-
         # 各レース先にアクセス
         for url in urls:
             raceid = url.rsplit('/', 2)[-2]
             # 取得済みレースの場合スキップ
-            if raceid + '.csv' in SCRAPED_LIST:
-                print(raceid + '.csv', 'is already scraped')
+            if Smf.check_raceid_exists(db_file, raceid):
+                print(raceid, ' is already scraped')
                 continue
-            df = Url_scraping(url, driver)
-            # csv保存
-            df.to_csv(SAVE_DIR + raceid + ".csv", index=False)
+            else:    
+                df = Url_scraping(url, driver)
+                # csv保存
+                df.to_csv(SAVE_DIR + raceid + ".csv", index=False)
         
         # 検索結果の次のページへ
         try:

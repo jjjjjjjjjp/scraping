@@ -1,6 +1,7 @@
 #かゆいところに手が届くちょっとした関数たち
 import re
 import os
+import sqlite3
 
 def Print_filepath():
     # 現在実行しているPythonファイルのパスを取得
@@ -11,21 +12,39 @@ def Print_filepath():
 
     os.path.dirname(__file__)
 
-def split_string(input_string):
-    # 正規表現パターンで数値と括弧内の数値をキャプチャ
-    pattern = r'(\d+)\((-?\d+)\)'
+
+def check_raceid_exists(db_file, race_id):
+    """
+    指定されたRaceIDがデータベース内に存在するかをチェックする関数。
     
-    # 正規表現を使ってマッチを探す
-    match = re.match(pattern, input_string)
+    Parameters:
+    - db_file (str): SQLiteデータベースファイルのパス
+    - race_id (int): 存在を確認するRaceID
     
-    if match:
-        # キャプチャされたグループを取得
-        number1 = int(match.group(1))
-        number2 = int(match.group(2))
-        return number1, number2
-    else:
-        raise ValueError("入力文字列がフォーマットに一致しません")
+    Returns:
+    - bool: RaceIDが存在する場合はTrue、存在しない場合はFalse
+    """
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
     
+    # race_resultsテーブルから指定されたRaceIDのレコード数をカウントする
+    cursor.execute("SELECT COUNT(*) FROM race_results WHERE RaceID = ?", (race_id,))
+    count = cursor.fetchone()[0]
+    
+    conn.close()
+    
+    # カウントが1以上ならRaceIDが存在する、それ以外は存在しないと判断
+    return count > 0
+
+def check_existing_data(conn, race_id, horse_num):
+    """
+    データベース内に指定されたレースIDと馬番が既に存在するかをチェックする関数。
+    """
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM race_results WHERE RaceID = ? AND Horse_num = ?", (race_id, horse_num))
+    count = cursor.fetchone()[0]
+    return count > 0
+
 if __name__ == "__main__": 
     Print_filepath()
     input_string = "446(-2)"

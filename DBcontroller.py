@@ -2,15 +2,7 @@
 import os
 import sqlite3
 import csv
-
-def check_existing_data(conn, race_id, horse_num):
-    """
-    データベース内に指定されたレースIDと馬番が既に存在するかをチェックする関数。
-    """
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM race_results WHERE RaceID = ? AND Horse_num = ?", (race_id, horse_num))
-    count = cursor.fetchone()[0]
-    return count > 0
+import Selfmade_functions as Smf
 
 def csv_to_sqlite(csv_file, db_file, table_name):
     # SQLiteデータベースに接続
@@ -157,7 +149,7 @@ if __name__ == "__main__":
                 for row in csv_reader:
                     race_id = row['raceID']
                     horse_num = row['馬番']
-                    if check_existing_data(conn, race_id, horse_num):
+                    if Smf.check_existing_data(conn, race_id, horse_num):
                         print(f"RaceID: {race_id}, Horse_num: {horse_num} は既に存在するため、ファイルの処理をスキップします。")
                         break  # ファイル全体の処理をスキップする場合は break を使用します
                     else:

@@ -55,7 +55,7 @@ def csv_to_sqlite(csv_file, db_file, table_name):
             horse_num = row['馬番']
 
             # 既存のデータがあるかどうかをチェック
-            if check_existing_data(conn, race_id, horse_num):
+            if Smf.check_existing_data(conn, race_id, horse_num):
                 print(f"RaceID: {race_id}, Horse_num: {horse_num} は既に存在するためスキップします。")
                 continue
             insert_sql = f"""
@@ -140,18 +140,30 @@ if __name__ == "__main__":
     csv_folder = os.path.join(script_dir, 'csv')
     db_file = 'race_results.db'
     table_name = 'race_results'
-    for csv_file in os.listdir(csv_folder):
+    for csv_file in os.listdir(csv_folder): #すべてのcsvに対して
         if csv_file.endswith('.csv'):
             csv_path = os.path.join(csv_folder, csv_file)
-                        # ファイルごとに処理をスキップするかどうかを判定
+                        
             with sqlite3.connect(db_file) as conn:
-                csv_reader = csv.DictReader(open(csv_path, 'r', newline='', encoding='utf-8'))
-                for row in csv_reader:
-                    race_id = row['raceID']
-                    horse_num = row['馬番']
-                    if Smf.check_existing_data(conn, race_id, horse_num):
-                        print(f"RaceID: {race_id}, Horse_num: {horse_num} は既に存在するため、ファイルの処理をスキップします。")
-                        break  # ファイル全体の処理をスキップする場合は break を使用します
-                    else:
-                        csv_to_sqlite(csv_path, db_file, table_name)
+                try:
+                    csv_reader = csv.DictReader(open(csv_path, 'r', newline='', encoding='utf-8'))
+                except FileNotFoundError:
+                    print(f"エラー: ファイル '{csv_path}' が見つかりません。")
+                except PermissionError:
+                    print(f"エラー: ファイル '{csv_path}' へのアクセス権がありません。")
+                except csv.Error as e:
+                    print(f"エラー: CSVファイルの読み込み中にエラーが発生しました。詳細: {e}")
+                except Exception as e:
+                    print(f"予期しないエラーが発生しました: {e}")
+                try:
+                    for row in csv_reader:
+                        race_id = row['raceID']
+                        horse_num = row['馬番']
+                        if Smf.check_existing_data(conn, race_id, horse_num): # ファイルごとに処理をスキップするかどうかを判定
+                            print(f"RaceID: {race_id}, Horse_num: {horse_num} は既に存在するため、ファイルの処理をスキップします。")
+                            break
+                        else:
+                            csv_to_sqlite(csv_path, db_file, table_name) #db_fileにcsvデータ投入
+                except UnicodeDecodeError as e:
+                    print(f"エラー: ファイル '{csv_path}' の読み込み中にエンコードエラーが発生しました。詳細: {e}")
 

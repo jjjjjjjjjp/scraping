@@ -1,4 +1,4 @@
-# 生データの整形やDB
+# 生データの整形とDB更新
 import os
 import sqlite3
 import csv

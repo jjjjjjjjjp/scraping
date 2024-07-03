@@ -4,7 +4,7 @@ import sqlite3
 import csv
 import Selfmade_functions as Smf
 
-def csv_to_sqlite(csv_file, db_file, table_name):
+def csv_to_sqlite(csv_file, db_file, table_name): # .csvファイル(csv_file)を.dbファイル(db_file)へ追加する
     # SQLiteデータベースに接続
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()

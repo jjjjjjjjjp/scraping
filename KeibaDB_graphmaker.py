@@ -115,7 +115,7 @@ def plot_single_combination(df, distance, course, direction):
     plt.tight_layout()
 
     # 画像ファイル名の作成と保存
-    file_name = f"Timedistribution_Distance_{distance}_Course_{course}_Direction_{direction}.png"
+    file_name = f"Timedistribution_{distance}m__{course}_{direction}.png"
     file_path = os.path.join(output_folder, file_name)
     plt.savefig(file_path)
     plt.close()

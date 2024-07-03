@@ -1,83 +1,129 @@
+import os
 import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
+from datetime import datetime, timedelta
 
-# SQLiteデータベースへの接続とカーソルの取得
-conn = sqlite3.connect('your_database.db')
-cursor = conn.cursor()
+# SQLite データベースに接続
+conn = sqlite3.connect('race_results.db')
+TIMEDELTA_SEC = 0.5 # 時間間隔の粒度を設定
+# 出力先のフォルダを設定
+output_folder = 'png'
+if not os.path.exists(output_folder):
+    os.makedirs(output_folder)
 
-# Finish_positionの範囲を指定して、各分布をプロットする関数
-def plot_distribution_by_category(finish_positions):
-    plot_by_distance(finish_positions)
-    plot_by_course(finish_positions)
-    plot_by_direction(finish_positions)
+# クエリを実行してデータを取得する関数
+def fetch_data(query, params=()):
+    cursor = conn.cursor()
+    cursor.execute(query, params)
+    columns = [col[0] for col in cursor.description]
+    data = cursor.fetchall()
+    df = pd.DataFrame(data, columns=columns)
+    return df
 
-# Distance毎の分布を取得
-def plot_by_distance(finish_positions):
-    query = f"""
-    SELECT Distance, Finish_position, COUNT(*) AS Count
-    FROM races
-    WHERE Finish_position BETWEEN {finish_positions[0]} AND {finish_positions[1]}
-    GROUP BY Distance, Finish_position
-    ORDER BY Distance, Finish_position
+# FinishPositionの範囲を指定してデータを取得する関数
+def fetch_data_by_position(position_start, position_end):
+    query = """
+    SELECT Distance, Course, Direction, Time, Finish_position
+    FROM race_results
+    WHERE Finish_position BETWEEN ? AND ?
     """
-    df = pd.read_sql_query(query, conn)
-    plot_distribution(df, "Distance", finish_positions)
+    df = fetch_data(query, (position_start, position_end))
 
-# Course毎の分布を取得
-def plot_by_course(finish_positions):
-    query = f"""
-    SELECT Course, Finish_position, COUNT(*) AS Count
-    FROM races
-    WHERE Finish_position BETWEEN {finish_positions[0]} AND {finish_positions[1]}
-    GROUP BY Course, Finish_position
-    ORDER BY Course, Finish_position
+    # Timeを"mm:ss.0"形式から秒数に変換
+    df['Time'] = pd.to_datetime(df['Time'], format='%M:%S.%f').dt.time
+    df['Time_seconds'] = df['Time'].apply(lambda x: datetime.combine(datetime.min, x) - datetime.min).dt.total_seconds()
+
+    return df
+
+def fetch_data_by_distance(distance_start, distance_end):
+    query = """
+    SELECT Distance, Course, Direction, Time, Finish_position
+    FROM race_results
+    WHERE Distance BETWEEN ? AND ?
     """
-    df = pd.read_sql_query(query, conn)
-    plot_distribution(df, "Course", finish_positions)
+    df = fetch_data(query, (distance_start, distance_end))
 
-# Direction毎の分布を取得
-def plot_by_direction(finish_positions):
-    query = f"""
-    SELECT Direction, Finish_position, COUNT(*) AS Count
-    FROM races
-    WHERE Finish_position BETWEEN {finish_positions[0]} AND {finish_positions[1]}
-    GROUP BY Direction, Finish_position
-    ORDER BY Direction, Finish_position
+    # Timeを"mm:ss.0"形式から秒数に変換
+    df['Time'] = pd.to_datetime(df['Time'], format='%M:%S.%f').dt.time
+    df['Time_seconds'] = df['Time'].apply(lambda x: datetime.combine(datetime.min, x) - datetime.min).dt.total_seconds()
+
+    return df
+
+def fetch_data_by_course(course):
+    query = """
+    SELECT Distance, Course, Direction, Time, Finish_position
+    FROM race_results
+    WHERE Course = ?
     """
-    df = pd.read_sql_query(query, conn)
-    plot_distribution(df, "Direction", finish_positions)
+    df = fetch_data(query, (course,))
 
-# データフレームを受け取り、指定したカラムでグラフをプロットする関数
-def plot_distribution(df, category, finish_positions):
-    categories = df[category].unique()
-    positions = range(finish_positions[0], finish_positions[1] + 1)
+    # Timeを"mm:ss.0"形式から秒数に変換
+    df['Time'] = pd.to_datetime(df['Time'], format='%M:%S.%f').dt.time
+    df['Time_seconds'] = df['Time'].apply(lambda x: datetime.combine(datetime.min, x) - datetime.min).dt.total_seconds()
 
-    fig, ax = plt.subplots(len(categories), figsize=(10, len(categories) * 5))
-    for i, cat in enumerate(categories):
-        data = df[df[category] == cat]
-        ax[i].bar(data['Finish_position'], data['Count'], color='blue')
-        ax[i].set_title(f"{category}: {cat}")
-        ax[i].set_xlabel('Finish Position')
-        ax[i].set_ylabel('Count')
-        ax[i].set_xticks(positions)
-        ax[i].set_xticklabels(positions)
+    return df
 
+def fetch_data_by_direction(direction):
+    query = """
+    SELECT Distance, Course, Direction, Time, Finish_position
+    FROM race_results
+    WHERE Direction = ?
+    """
+    df = fetch_data(query, (direction,))
+
+    # Timeを"mm:ss.0"形式から秒数に変換
+    df['Time'] = pd.to_datetime(df['Time'], format='%M:%S.%f').dt.time
+    df['Time_seconds'] = df['Time'].apply(lambda x: datetime.combine(datetime.min, x) - datetime.min).dt.total_seconds()
+
+    return df
+
+# 各組み合わせごとに分布をプロットする関数
+def plot_distribution_by_combinations(position_start, position_end):
+    df = fetch_data_by_position(position_start, position_end)
+
+    # Distance、Course、Directionの組み合わせごとに分布をプロット
+    combinations = df.groupby(['Distance', 'Course', 'Direction'])
+    for (distance, course, direction), data in combinations:
+        plot_single_combination(data, distance, course, direction)
+
+# 単一の組み合わせに対して分布をプロットする関数
+def plot_single_combination(df, distance, course, direction):
+    fig, ax = plt.subplots(figsize=(10, 6))
+    timedelta_seconds = TIMEDELTA_SEC  # 時間間隔の粒度を設定
+
+    counts = []
+    start_time = df['Time_seconds'].min()
+    end_time = df['Time_seconds'].max()
+
+    current_time = start_time
+    while current_time <= end_time:
+        count = df[(df['Time_seconds'] >= current_time) & 
+                   (df['Time_seconds'] < current_time + timedelta_seconds)].shape[0]
+        counts.append(count)
+        current_time += timedelta_seconds
+
+    time_values = [datetime.min + timedelta(seconds=start_time + i * timedelta_seconds) for i in range(len(counts))]
+    time_strings = [time.strftime('%M:%S.%f')[:-3] for time in time_values]  # mm:ss.00 形式に変換
+
+    ax.plot(time_strings, counts)
+    ax.set_xlabel('Time')
+    ax.set_ylabel('Count')
+    ax.set_title(f"Time distribution - Distance {distance}, Course {course}, Direction {direction}")
+    ax.legend()
+    plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.show()
+
+    # 画像ファイル名の作成と保存
+    file_name = f"Timedistribution_Distance_{distance}_Course_{course}_Direction_{direction}.png"
+    file_path = os.path.join(output_folder, file_name)
+    plt.savefig(file_path)
+    plt.close()
 
 # メイン処理
 if __name__ == "__main__":
-    # Finish_positionの範囲を指定
-    finish_positions_1_to_3 = (1, 3)
-    finish_positions_1_to_5 = (1, 5)
+    position_start = 1  # 開始Finish_positionを設定
+    position_end = 3    # 終了Finish_positionを設定
+    plot_distribution_by_combinations(position_start, position_end)
 
-    # 分布をプロット
-    print("Plotting distribution for Finish Positions 1 to 3")
-    plot_distribution_by_category(finish_positions_1_to_3)
-
-    print("Plotting distribution for Finish Positions 1 to 5")
-    plot_distribution_by_category(finish_positions_1_to_5)
-
-# 接続を閉じる
-conn.close()
+    conn.close()

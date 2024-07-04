@@ -196,15 +196,15 @@ def All_cource_scraping():
     # select.select_by_value('2010')
 
     # 東京
-    driver.find_element(By.XPATH,"//input[@id='check_Jyo_06']").click()
+    driver.find_element(By.XPATH,"//input[@id='check_Jyo_05']").click()
     # 中山
-    driver.find_element(By.XPATH,"//input[@id='check_Jyo_07']").click()
+    driver.find_element(By.XPATH,"//input[@id='check_Jyo_06']").click()
     # 中京
-    driver.find_element(By.XPATH,"//input[@id='check_Jyo_08']").click()
+    driver.find_element(By.XPATH,"//input[@id='check_Jyo_07']").click()
     # 京都
-    driver.find_element(By.XPATH,"//input[@id='check_Jyo_09']").click()
+    driver.find_element(By.XPATH,"//input[@id='check_Jyo_08']").click()
     # 阪神
-    driver.find_element(By.XPATH,"//input[@id='check_Jyo_10']").click()
+    driver.find_element(By.XPATH,"//input[@id='check_Jyo_09']").click()
     # G1
     driver.find_element(By.XPATH,"//input[@id='check_grade_1']").click()
     # G2
